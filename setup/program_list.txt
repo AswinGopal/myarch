@@ -1,0 +1,14 @@
+mpv
+intel-gpu-tools
+gufw
+i2c-tools
+psensor
+git
+dosfstools
+mtools
+ntfs-3g
+gparted
+jpegoptim
+sbsigntools
+efitools
+apparmor
