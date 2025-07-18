@@ -7,7 +7,7 @@ GREEN='\e[1;32m'
 YELLOW='\e[1;33m'
 
 # Github directory
-githubDirectory="/tmp/SETUP/Github/"
+githubDirectory="$(git rev-parse --show-toplevel 2>/dev/null)"
 
 # Handle error messages and print them
 log_error() {
