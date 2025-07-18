@@ -6,8 +6,9 @@ RED='\e[1;38;2;255;51;51m'
 GREEN='\e[1;32m'
 YELLOW='\e[1;33m'
 
-# Github directory
+# Global directories
 githubDirectory="$(git rev-parse --show-toplevel 2>/dev/null)"
+tempDirectory="/tmp/SETUP"
 
 # Handle error messages and print them
 log_error() {
@@ -36,18 +37,7 @@ success_message() {
     echo -e "${GREEN}$1 \xE2\x9C\x94${RC}"
 }
 
-# Function for updating repositories
-update_repositories() {
-    show_info "Performing full system upgrade on Arch..."
-    if sudo pacman -Syu --noconfirm > /dev/null 2>&1; then
-        success_message "System upgraded successfully"
-        return 0
-    else
-        log_error "Failed to upgrade system"
-        exit 1
-    fi
-}
-
+# Install programs from a file
 install_programs() {
     show_info "Installing programs via pacman..."
 
@@ -71,7 +61,7 @@ install_programs() {
 
 # Function to install terminal theme
 configureTerminalTheme() {
-    font_download_directory="/tmp/SETUP/"
+    font_download_directory="$tempDirectory"
     font_install_path="/usr/local/share/fonts/"
     
     # Add more fonts with their respective filenames and extraction directories here
@@ -85,8 +75,8 @@ configureTerminalTheme() {
 
     for font_file in "${!font_info[@]}"; do
         font_name="${font_info[$font_file]}"
-        font_download_path="${font_download_directory}${font_file}"
-        font_extract_path="${font_download_directory}${font_name}"
+        font_download_path="${font_download_directory}/${font_file}"
+        font_extract_path="${font_download_directory}/${font_name}"
 
         # Downloading latest release of the fonts from nerdfonts.com
         latest_release_url=$(curl -s "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" | jq -r ".assets[] | select(.name == \"$font_file\") | .browser_download_url")
@@ -307,50 +297,53 @@ finalConfigurations() {
     success_message "\nEverything setup successfully. Enjoy Linux"
 }
 
-# Funtion to cleanup the configuration files
+# Funtion to delete temperory directory
 cleanUp() {
-    local directory="/tmp/SETUP"
-    show_info "Cleaning junk files..."
+    show_info "Removing temoporary directory..."
 
-    if [ -d "$directory" ]; then
-        rm -rf "$directory"
-        success_message "Junk files removed succesfully"
+    if [ -d "$tempDirectory" ]; then
+        rm -rf "$tempDirectory"
+        success_message "Temporary directory removed successfully"
+        return 0
+    else
+        log_error "No temoporary directory to remove"
+        return 1
     fi
 }
 
 # Function to create SETUP directory in /tmp if it doesn't exist
 create_SETUP_directory() {
-    if [ ! -d "/tmp/SETUP" ]; then
-        mkdir -p "/tmp/SETUP"
+    if [ ! -d "$tempDirectory" ]; then
+        mkdir -p "$tempDirectory"
     fi
 }
 
-# Main function
+#---------------------- Main function-------------------------
 
-# Array of valid case names
-valid_args=("full" "arch")
+# Save a list of valid parameters
+valid_args=("full" "test")
+
 # Join the elements of the array with a pipe separator
 valid_args_str=$(IFS=\|; echo "${valid_args[*]}")
 
 check_argument() {
     create_SETUP_directory
-
     local arg="$1"
 
     case $arg in
         full)
             show_info "Running install function..."
             # User's commands for install function
-            update_repositories
             install_programs
             finalConfigurations
+            cleanUp
             ;;
         test)
             show_info "Testing funtions..."
             ;;
         *)
             log_error "The argument you provided is invalid"
-            log_error "Usage: bash script_name.sh [${valid_args_str}]"
+            log_error "Usage: script_name.sh [${valid_args_str}]"
             return 1
             ;;
     esac
@@ -359,7 +352,7 @@ check_argument() {
 # Check for arguments and invoke the necessary actions
 if [ $# -eq 0 ]; then
     log_error "Please provide an argument."
-    log_error "Usage: bash script_name.sh [${valid_args_str}]"
+    log_error "Usage: script_name.sh [${valid_args_str}]"
     exit 1
 fi
 
